@@ -1,0 +1,36 @@
+---
+title: "cpr: An R package for finding parsimonious B-spline regression models via control polygon reduction"
+subtitle: <br> <img height=120px src="figure/denver-flag.png"> <img height=120px src="figure/Rlogo.png"> <img height=120px src="figure/galvanize.png">  <br> Denver R Users Group 
+author:
+  Peter E. DeWitt
+date: 28 June 2017
+output:
+  ioslides_presentation:
+    keep_md: true
+    template: template.html
+    logo: figure/cpr-hex.png
+    css: style.css
+    widescreen: true
+    self_contained: false
+---
+
+## Opening Notes:
+
+* Thank you Glavanive for providing the space for our meetup.
+
+* Outline for this talk:
+
+    * Brief overview of Control Polygon Reduction.
+    * Overview and qucik example of using the cpr package to find parsimonious
+      B-spline regression models.
+    * R Programming Examples:
+
+        * `match.fun`
+        * `update`
+        * formulae and environments
+
+```{r child="cpr-background.Rmd"}
+```
+
+```{r child="cpr-pkg.Rmd"}
+```

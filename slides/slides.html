@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>cpr: An R package for finding parsimonious B-spline regression models via control polygon reduction</title>
+
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <meta name="generator" content="pandoc" />
+
+
+
+  <meta name="date" content="2017-06-28" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+
+  <base target="_blank">
+
+  <script type="text/javascript">
+    var SLIDE_CONFIG = {
+      // Slide settings
+      settings: {
+                title: 'cpr: An R package for finding parsimonious B-spline regression models via control polygon reduction',
+                        subtitle: '<br> <img height=120px src="figure/denver-flag.png"> <img height=120px src="figure/Rlogo.png"> <img height=120px src="figure/galvanize.png"> <br> Denver R Users Group',
+                useBuilds: true,
+        usePrettify: true,
+        enableSlideAreas: true,
+        enableTouch: true,
+                        favIcon: 'slides_files/logo.png',
+              },
+
+      // Author information
+      presenters: [
+            {
+        name:  'Peter E. DeWitt' ,
+        company: '',
+        gplus: '',
+        twitter: '',
+        www: '',
+        github: ''
+      },
+            ]
+    };
+  </script>
+
+  <link href="slides_files/ioslides-13.5.1/fonts/fonts.css" rel="stylesheet" />
+  <link href="slides_files/ioslides-13.5.1/theme/css/default.css" rel="stylesheet" />
+  <link href="slides_files/ioslides-13.5.1/theme/css/phone.css" rel="stylesheet" />
+  <script src="slides_files/ioslides-13.5.1/js/modernizr.custom.45394.js"></script>
+  <script src="slides_files/ioslides-13.5.1/js/prettify/prettify.js"></script>
+  <script src="slides_files/ioslides-13.5.1/js/prettify/lang-r.js"></script>
+  <script src="slides_files/ioslides-13.5.1/js/prettify/lang-yaml.js"></script>
+  <script src="slides_files/ioslides-13.5.1/js/hammer.js"></script>
+  <script src="slides_files/ioslides-13.5.1/js/slide-controller.js"></script>
+  <script src="slides_files/ioslides-13.5.1/js/slide-deck.js"></script>
+
+  <style type="text/css">
+
+    b, strong {
+      font-weight: bold;
+    }
+
+    em {
+      font-style: italic;
+    }
+
+    slides > slide {
+      -webkit-transition: all 0.4s ease-in-out;
+      -moz-transition: all 0.4s ease-in-out;
+      -o-transition: all 0.4s ease-in-out;
+      transition: all 0.4s ease-in-out;
+    }
+
+    .auto-fadein {
+      -webkit-transition: opacity 0.6s ease-in;
+      -webkit-transition-delay: 0.4s;
+      -moz-transition: opacity 0.6s ease-in 0.4s;
+      -o-transition: opacity 0.6s ease-in 0.4s;
+      transition: opacity 0.6s ease-in 0.4s;
+      opacity: 0;
+    }
+
+  </style>
+
+  <link rel="stylesheet" href="style.css" type="text/css" />
+
+</head>
+
+<body style="opacity: 0">
+
+<slides class="layout-widescreen">
+
+  <slide class="title-slide segue nobackground">
+        <aside class="gdbar"><img src="slides_files/logo.png"></aside>
+        <!-- The content of this hgroup is replaced programmatically through the slide_config.json. -->
+    <hgroup class="auto-fadein">
+      <h1 data-config-title><!-- populated from slide_config.json --></h1>
+      <h2 data-config-subtitle><!-- populated from slide_config.json --></h2>
+      <p data-config-presenter><!-- populated from slide_config.json --></p>
+            <p style="margin-top: 6px; margin-left: -2px;">28 June 2017</p>
+          </hgroup>
+  </slide>
+
+<slide class=''><hgroup><h2>Opening Notes:</h2></hgroup><article  id="opening-notes">
+
+<ul>
+<li><p>Thank you Glavanive for providing the space for our meetup.</p></li>
+<li><p>Outline for this talk:</p>
+
+<ul>
+<li>Brief overview of Control Polygon Reduction.</li>
+<li>Overview and qucik example of using the cpr package to find parsimonious B-spline regression models.</li>
+<li><p>R Programming Examples:</p>
+
+<ul>
+<li><code>match.fun</code></li>
+<li><code>update</code></li>
+<li>formulae and environments</li>
+</ul></li>
+</ul></li>
+</ul>
+
+</article></slide><slide class='segue dark nobackground level1'><hgroup class = 'auto-fadein'><h2>Control Polygon Reduction</h2></hgroup><article  id="control-polygon-reduction">
+
+<aside class="gdbar">
+
+<img width=120 height=120 src="figure/cpr-hex.png" align="middle"/>
+
+</aside>
+
+<aside class='note'><section><p>\[\newcommand{\bs}[1]{\boldsymbol{#1}}
+\newcommand{\card}[1]{n\left(#1\right)}\]</p></section></aside>
+
+</article></slide><slide class=''><hgroup><h2>Introduction</h2></hgroup><article  id="introduction">
+
+<ul>
+<li><p>Consider the regression model \[\bs{y} = f \left( \bs{x} \right) + \bs{Z}_{f}
+  \bs{\beta} + \bs{Z}_{r} \bs{b} + \bs{\epsilon}\]</p></li>
+<li>Goals:
+
+<ul>
+<li>Model \(f\) via uni-variable B-splines.</li>
+<li>Regression model needs to be parsimonious (low degree of freedom).</li>
+</ul></li>
+<li>Challenges:
+
+<ul>
+<li>B-splines are defined by polynomial order and a knot sequences.</li>
+<li>Given a loss function and polynomial order, no analytic solution exists for optimal a knot sequences.</li>
+<li>Model selection need to be efficient, <em>i.e.</em>, good fits, quickly.</li>
+</ul></li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Quick B-spline Review</h2></hgroup><article  id="quick-b-spline-review">
+
+<p>\[f(x) = \bs{B}_{k, \bs{\xi}} \left(x\right) \bs{\theta}_{\bs{\xi}} = \sum_{j=1}^{k = l}  \theta_{\bs{\xi}, j} B_{j, k, \bs{\xi}} \left(x\right)\]</p>
+
+<ul>
+<li>The matrix \(\bs{B}_{k, \bs{\xi}} \left( x \right)\) is defined by de Boor&#39;s algorithm.
+
+<ul>
+<li>Polynomial order \(k,\) (degree = \(k -1\)).</li>
+<li>Knot sequences \(\bs{\xi}\) with \(k\)-fold boundary knots and \(l \geq 0\) interior knots.</li>
+</ul></li>
+<li><p>\(\bs{\theta}_{\bs{\xi}}\) is a \(\left(k + l\right) \times 1\) column vector of regression coefficients.</p></li>
+<li><p>Control Polygons: Convex hull for \(\bs{B}_{k, \bs{\xi}} \left( x \right) \bs{\theta}_{\bs{\xi}}\)</p></li>
+</ul>
+
+<p>\[CP_{k, \bs{\xi}, \bs{\theta}_{\bs{\xi}}} = \left\{ \left( \xi_{j}^{*}, \theta_{\bs{\xi}, j} \right) \right\}_{j=1}^{n\left(\bs{\xi}\right) - k}, \quad \xi_{j}^{*} = \frac{1}{k-1} \sum_{i = 1}^{k-1} \xi_{j + i}\]</p>
+
+</article></slide><slide class=''><hgroup><h2>Example B-spline Basis and Spline function</h2></hgroup><article  id="example-b-spline-basis-and-spline-function">
+
+<pre class = 'prettyprint lang-r'>bmat &lt;- bsplines(x = seq(0, 6, length = 500), iknots = c(1.0, 1.5, 2.3, 4.0, 4.5))
+theta &lt;- c(1, 0, 3.5, 4.2, 3.7, -0.5, -0.7, 2, 1.5)
+eg_cp &lt;- cp(bmat, theta)</pre>
+
+<div style="width: 100%; display: table;">
+<div style="display: table-row">
+<div style="display: table-cell; vertical-align: top;">
+<pre class = 'prettyprint lang-r'>plot(bmat)
+#
+#
+#</pre>
+
+<img src='slides_files/figure-html/eg_basis_plot-1.png' title=''/><!-- --></div>
+
+<div style="display: table-cell; vertical-align: top;">
+<img width=50px height=200px src="figure/white-square.png"></div>
+
+<div style="display: table-cell; vertical-align: top;">
+<pre class = 'prettyprint lang-r'>grid.arrange(plot(eg_cp, show_spline = TRUE, show_cp = FALSE),
+             plot(eg_cp),
+             plot(eg_cp, show_spline = TRUE),
+             nrow = 1)</pre>
+
+<img src='slides_files/figure-html/eg_spline_plot-1.png' title=''/><!-- --></div></div></div>
+
+</article></slide><slide class=''><hgroup><h2>Control Polygon Reduction (CPR)</h2></hgroup><article  id="control-polygon-reduction-cpr">
+
+<ul>
+<li>General Idea
+
+<ul>
+<li>Assume that \(f\left(x\right)\) can be adequately modeled by \(\bs{B}_{k, \bs{\xi}} \left( x \right) \bs{\theta}_{\bs{\xi}}\).</li>
+<li>Start search for \(\bs{\xi}\) within a larger sequence \(\bs{\xi} \cup \bs{\xi}&#39;.\)</li>
+</ul></li>
+</ul>
+
+<p><br></p>
+
+<ul>
+<li>CPR is a backward-step model selection process.</li>
+<li>Remove the least influential knot at each step.</li>
+</ul>
+
+<p><br></p>
+
+<ul>
+<li>Metric for knot influence based changes in the control polygon.</li>
+<li>Sum of the squared distance between control vertex ordinates.</li>
+<li>More details in vignette and arxiv paper: <a href='https://arxiv.org/abs/1705.04756' title=''>https://arxiv.org/abs/1705.04756</a></li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Idealized CPR Example</h2></hgroup><article  id="idealized-cpr-example">
+
+<iframe src="fdat_cpr_run.html">
+
+</iframe>
+
+<div style="position: absolute; right: 0px; bottom: 0px;">
+<p><img width=25px height=25px src="figure/thank-you-notes-512.png"></p></div>
+
+<aside class='note'><section><p><img width=600 height=400 src="figure/ideal_cpr_v_frwd.png"/></p></section></aside>
+
+</article></slide><slide class=''><hgroup><h2>Selected Simulation Results</h2></hgroup><article  id="selected-simulation-results">
+
+<div style="width: 100%; display: table;">
+<div style="display: table-row">
+<div style="display: table-cell; vertical-align: top;">
+<img src='figure/dp4_big-1.png' title=''/><!-- --></div>
+
+<div style="display: table-cell; vertical-align: top;">
+Median Time to Evaluate OLS
+
+<table>
+
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+method
+
+</th>
+
+<th style="text-align:right;">
+
+Seconds
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td style="text-align:left;">
+
+Bkwd
+
+</td>
+
+<td style="text-align:right;">
+
+33.5
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+CPR
+
+</td>
+
+<td style="text-align:right;">
+
+5.5
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+Frwd
+
+</td>
+
+<td style="text-align:right;">
+
+4.6
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+PSLN
+
+</td>
+
+<td style="text-align:right;">
+
+3.9
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+<p><br></p>
+
+Median Time to Evaluate Mixed Effect Model
+
+<table>
+
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+method
+
+</th>
+
+<th style="text-align:right;">
+
+Seconds
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td style="text-align:left;">
+
+Bkwd
+
+</td>
+
+<td style="text-align:right;">
+
+3542.4
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+CPR
+
+</td>
+
+<td style="text-align:right;">
+
+80.7
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+Frwd
+
+</td>
+
+<td style="text-align:right;">
+
+80.5
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+PSLN
+
+</td>
+
+<td style="text-align:right;">
+
+350.7
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table></div></div></div>
+
+</article></slide><slide class=''><hgroup><h2>Control Polygon Reduction </h2><h3> Conclusions</h3></hgroup><article  id="control-polygon-reduction-conclusions">
+
+<ul>
+<li><p>CPR is capable of identifying high quality of fit, parsimonious B-spline regression models, quickly.</p></li>
+<li><p>Added bonuses of having a quick algorithm: Able to search over polynomial order.</p></li>
+<li><p>Knots, by being in &quot;good&quot; locations, might have meaningful interpretations.</p></li>
+<li><p>The CPR method generalizes to multi-variable B-splines via Control Net Reduction.</p></li>
+</ul>
+
+</article></slide><slide class='segue dark nobackground level1'><hgroup class = 'auto-fadein'><h2>cpr: An R Package</h2></hgroup><article  id="cpr-an-r-package">
+
+<aside class="gdbar">
+
+<img width=120 height=120 src="figure/cpr-hex.png" align="middle"/>
+
+</aside>
+
+</article></slide><slide class=''><hgroup><h2>cpr tools</h2></hgroup><article  id="cpr-tools">
+
+<p>The <code>cpr</code> package provides:</p>
+
+<ol>
+<li>A simulated data set based on SWAN DHS</li>
+<li>Tools for building and manipulating uni-variable and multi-variable B-splines.</li>
+<li>Tools for building and manipulating control polygons and control nets</li>
+<li>The <code>cpr</code> and <code>cnr</code> calls for running the control polygon reduction and control net reduction.</li>
+<li>Lots of plotting and diagnostic tools. <img height=250 src="figure/cpr-hex.png" align = "right"/></li>
+</ol>
+
+<ul>
+<li>Download
+
+<ul>
+<li><a href='https://cran.r-project.org/package=cpr' title=''>https://cran.r-project.org/package=cpr</a></li>
+<li><a href='https://github.com/dewittpe/cpr' title=''>https://github.com/dewittpe/cpr</a></li>
+</ul></li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Overview </h2><h3> Data &#8211; Initial Model &#8211; CPR &#8211; Selection of Preferable Model</h3></hgroup><article  id="overview-data----initial-model----cpr----selection-of-preferable-model">
+
+<pre class = 'prettyprint lang-r'># Pseudo-code, Outline for CPR use
+init_cp &lt;- cp(y ~ bsplines(x), data = my_data_frame)  # initial control polygon
+cpr_run &lt;- cpr(init_cp)                               # run CPR
+plot(cpr_run)                                         # plots to help you select a model
+selected_cp &lt;- cpr_run[[4]]                           # selected model</pre>
+
+</article></slide><slide class=''><hgroup><h2>Simulated Data Set</h2></hgroup><article  id="simulated-data-set">
+
+<pre class = 'prettyprint lang-r'>str(spdg)
+## Classes &#39;tbl_df&#39;, &#39;tbl&#39; and &#39;data.frame&#39;:    24730 obs. of  9 variables:
+##  $ id          : int  1 1 1 1 1 1 1 1 1 1 ...
+##  $ age         : num  49.3 49.3 49.3 49.3 49.3 ...
+##  $ ttm         : num  -5.19 -5.19 -5.19 -5.19 -5.19 ...
+##  $ ethnicity   : Factor w/ 5 levels &quot;Caucasian&quot;,&quot;Black&quot;,..: 4 4 4 4 4 4 4 4 4 4 ...
+##  $ bmi         : num  36.2 36.2 36.2 36.2 36.2 ...
+##  $ day_from_dlt: num  -8 -7 -6 -5 -4 -3 -2 -1 0 1 ...
+##  $ day_of_cycle: int  1 2 3 4 5 6 7 8 9 10 ...
+##  $ day         : num  -1 -0.875 -0.75 -0.625 -0.5 ...
+##  $ pdg         : num  0.2401 0.0668 0.1088 0.0733 0.0979 ...</pre>
+
+<div style="position: absolute; right: 0px; bottom: 0px;">
+<p><img width=25px height=25px src="figure/thank-you-notes-512.png"></p></div>
+
+<aside class='note'><section><p><img src='slides_files/figure-html/cpr_pkg_spdg-1.png' title=''/><!-- --></p></section></aside>
+
+</article></slide><slide class=''><hgroup><h2>Build The Initial Control Polygon</h2></hgroup><article  id="build-the-initial-control-polygon">
+
+<div style="width: 100%; display: table;">
+<div style="display: table-row">
+<div style="display: table-cell; vertical-align: top;">
+<pre class = 'prettyprint lang-r'># Packages needed for the following examples
+library(cpr)
+library(dplyr)
+library(lme4)
+
+# initial control polygon, 4th order B-splines
+init_cp4 &lt;- cp(log10(pdg) ~ bsplines(day, df = 54) + (1 | id),
+               data = spdg, method = lmer)
+plot(init_cp4)</pre></div>
+
+<div style="display: table-cell; vertical-align: top;">
+</div>
+
+<div style="display: table-cell; vertical-align: top;">
+<img src='slides_files/figure-html/init_cp_plot-1.png' title=''/><!-- --></div></div></div>
+
+<ul>
+<li><em>We will explore how the <code>method</code> argument works in more detail.</em></li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Run CPR</h2></hgroup><article  id="run-cpr">
+
+<pre class = 'prettyprint lang-r'>cpr_run4 &lt;- cpr(init_cp4)</pre>
+
+<ul>
+<li><em>We will explore how the <code>cpr</code> is able to fit all the models via updating the <code>formula</code> element of <code>init_cp4</code> object.</em></li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Select a Model</h2></hgroup><article  id="select-a-model">
+
+<div style="width: 100%; display: table;">
+<div style="display: table-row">
+<div style="display: table-cell; vertical-align: top;">
+<pre class = 'prettyprint lang-r'>plot(cpr_run4, color = TRUE)</pre>
+
+<img src='slides_files/figure-html/cpr_run4_plot_cps-1.png' title=''/><!-- --></div>
+
+<div style="display: table-cell; vertical-align: top;">
+<img width=50px height=200px src="figure/white-square.png"></div>
+
+<div style="display: table-cell; vertical-align: top;">
+<pre class = 'prettyprint lang-r'>plot(cpr_run4, type = &quot;rmse&quot;, to = 12)</pre>
+
+<p><img src='slides_files/figure-html/cpr_run4_plot_rmse-1.png' title=''/><!-- --></p>
+
+<pre class = 'prettyprint lang-r'>cpr_run4
+## A list of control polygons
+## List of 51
+##  - attr(*, &quot;class&quot;)= chr [1:2] &quot;cpr_cpr&quot; &quot;list&quot;
+selected_cp4 &lt;- cpr_run4[[4]]</pre></div></div></div>
+
+</article></slide><slide class=''><hgroup><h2>Selected CP</h2></hgroup><article  id="selected-cp">
+
+<pre class = 'prettyprint lang-r'>str(selected_cp4)
+## List of 12
+##  $ cp          :Classes &#39;tbl_df&#39;, &#39;tbl&#39; and &#39;data.frame&#39;:    7 obs. of  2 variables:
+##   ..$ xi_star: num [1:7] -1 -0.6889 -0.3703 0.0298 0.3854 ...
+##   ..$ theta  : num [1:7] -0.0477 -0.4992 -0.5588 -0.1586 0.9388 ...
+##  $ xi          : num [1:11] -1 -1 -1 -1 -0.0668 ...
+##  $ iknots      : num [1:3] -0.0668 -0.0443 0.2006
+##  $ bknots      : num [1:2] -1 1
+##  $ order       : num 4
+##  $ call        : language cp(formula = log10(pdg) ~ bsplines(day, iknots = c(-0.0667568176695966,      -0.0442920251104394, 0.2005767012687| __truncated__ ...
+##  $ keep_fit    : logi FALSE
+##  $ fit         : logi NA
+##  $ loglik      : num 8523
+##  $ rmse        : num 0.155
+##  $ coefficients: num [1:7] -0.0477 -0.4992 -0.5588 -0.1586 0.9388 ...
+##  $ vcov        : num [1:7, 1:7] 1.23e-04 8.09e-05 1.15e-04 1.01e-04 1.08e-04 ...
+##  - attr(*, &quot;class&quot;)= chr [1:2] &quot;cpr_cp&quot; &quot;list&quot;</pre>
+
+</article></slide><slide class=''><hgroup><h2>Methods for <code>cpr_cp</code> Objects</h2></hgroup><article  id="methods-for-cpr_cp-objects">
+
+<pre class = 'prettyprint lang-r'>methods(class = &quot;cpr_cp&quot;)
+##  [1] cpr               get_spline        influence_of     
+##  [4] influence_weights plot              predict          
+##  [7] print             summary           update_bsplines  
+## [10] wiggle           
+## see &#39;?methods&#39; for accessing help and source code</pre>
+
+</article></slide><slide class=''><hgroup><h2>Other Orders</h2></hgroup><article  id="other-orders">
+
+<p>CPR is fast, consider other polynomial orders to help find parsimonious models.</p>
+
+<pre class = 'prettyprint lang-r'>init_cp3 &lt;- update_bsplines(init_cp4, df = 53, order = 3)
+init_cp2 &lt;- update_bsplines(init_cp4, df = 52, order = 2)
+cpr_run3 &lt;- cpr(init_cp3)
+cpr_run2 &lt;- cpr(init_cp2)</pre>
+
+<pre class = 'prettyprint lang-r'>list(cpr_run4, cpr_run3, cpr_run2) %&gt;%
+lapply(summary) %&gt;%
+bind_rows(.id = &quot;order&quot;) %&gt;%
+mutate(order = factor(order, 1:3, c(&quot;4th&quot;, &quot;3rd&quot;, &quot;2nd&quot;))) %&gt;%
+filter(index &lt; 13) %&gt;%
+
+ggplot() +
+aes(x = dfs, y = rmse, color = order, linetype = order) +
+geom_path() +
+geom_point()   # Graphic on the next slide</pre>
+
+</article></slide><slide class=''><hgroup><h2>Summaries</h2></hgroup><article  id="summaries">
+
+<p><img src='slides_files/figure-html/cpr_other_order_results-1.png' title=''/><!-- --></p>
+
+<pre class = 'prettyprint lang-r'># Preferable Model  (index and dfs are not the same thing)
+cpr_run3[[3]]</pre>
+
+</article></slide><slide class=''><hgroup><h2>Control Net Reduction</h2></hgroup><article  id="control-net-reduction">
+
+<ul>
+<li>Control Net Reduction (CNR) is the natural extension of CPR from uni-variable B-splines to multi-variable B-splines.</li>
+</ul>
+
+<pre class = 'prettyprint lang-r'># Pseudo-code example of CNR
+init_cn &lt;- cn(y ~ btensor(list(x1, x2, x3)))   # Initial control net
+cnr_run &lt;- cnr(init_cn)                        # run CNR
+plot(cnr_run)                                  # diagnostic plots
+selected_cn &lt;- cnr_run[[3]]                    # select preferable model</pre>
+
+</article></slide><slide class=''><hgroup><h2>Some Results from My Dissertation</h2></hgroup><article  id="some-results-from-my-dissertation">
+
+<iframe src="swan_rgl.html">
+
+</iframe>
+
+</article></slide><slide class=''><hgroup><h2>Some Results from My Dissertation</h2></hgroup><article  id="some-results-from-my-dissertation-1">
+
+<iframe src="swan_animation_age_ttm.html">
+
+</iframe>
+
+</article></slide><slide class=''><hgroup><h2>Download cpr</h2></hgroup><article  id="download-cpr">
+
+<ul>
+<li><code>cpr</code>: Control Polygon Reduction <img width=259 height=300 src="figure/cpr-hex.png" align = "right"/>
+
+<ul>
+<li><a href='https://cran.r-project.org/package=cpr' title=''>https://cran.r-project.org/package=cpr</a></li>
+<li><a href='https://github.com/dewittpe/cpr' title=''>https://github.com/dewittpe/cpr</a></li>
+</ul></li>
+<li><p>Detailed examples are in vignette and standard documentation files.</p></li>
+<li><p>Please test the package. File bug reports at <a href='https://github.com/dewittpe/cpr/issues' title=''>https://github.com/dewittpe/cpr/issues</a></p></li>
+<li><p>These slides are available at <a href='https://github.com/dewittpe/cpr-cowy-asa-april-2017' title=''>https://github.com/dewittpe/cpr-cowy-asa-april-2017</a></p></li>
+</ul></article></slide>
+
+
+  <slide class="backdrop"></slide>
+
+</slides>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+<!-- map slide visiblity events into shiny -->
+<script>
+  (function() {
+    if (window.jQuery) {
+       window.jQuery(document).on('slideleave', function(e) {
+         window.jQuery(e.target).trigger('hidden');
+      });
+       window.jQuery(document).on('slideenter', function(e) {
+         window.jQuery(e.target).trigger('shown');
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,176 @@
+# cpr: An R Package
+<aside class="gdbar">
+<img width=120 height=120 src="figure/cpr-hex.png" align="middle"/>
+</aside>
+
+## cpr tools
+The `cpr` package provides:
+
+1. A simulated data set based on SWAN DHS
+2. Tools for building and manipulating uni-variable and multi-variable B-splines.
+3. Tools for building and manipulating control polygons and control nets
+4. The `cpr` and `cnr` calls for running the control polygon reduction and
+   control net reduction.
+5. Lots of plotting and diagnostic tools.  <img height=250 src="figure/cpr-hex.png" align = "right"/>
+- Download
+    - https://cran.r-project.org/package=cpr
+    - https://github.com/dewittpe/cpr
+
+## Overview | Data -- Initial Model -- CPR -- Selection of Preferable Model
+```{r, eval = FALSE}
+# Pseudo-code, Outline for CPR use
+init_cp <- cp(y ~ bsplines(x), data = my_data_frame)  # initial control polygon
+cpr_run <- cpr(init_cp)                               # run CPR
+plot(cpr_run)                                         # plots to help you select a model
+selected_cp <- cpr_run[[4]]                           # selected model
+```
+
+## Simulated Data Set
+```{r cpr_pkg_spdg_str}
+str(spdg)
+```
+
+<div style="position: absolute; right: 0px; bottom: 0px;">
+<img width=25px height=25px src="figure/thank-you-notes-512.png">
+</div>
+<div class="notes">
+```{r cpr_pkg_spdg, echo = FALSE, fig.width = 6, fig.height = 6}
+ggplot(spdg) +
+  aes(x = day, y = log10(pdg), group = id) +
+  geom_line(alpha = 0.1)
+```
+</div>
+
+## Build The Initial Control Polygon
+<div style="width: 100%; display: table;">
+  <div style="display: table-row">
+  <div style="display: table-cell; vertical-align: top;">
+```{r init_cp4, fig.show = "hide"}
+# Packages needed for the following examples
+library(cpr)
+library(dplyr)
+library(lme4)
+
+# initial control polygon, 4th order B-splines
+init_cp4 <- cp(log10(pdg) ~ bsplines(day, df = 54) + (1 | id),
+               data = spdg, method = lmer)
+plot(init_cp4)
+```
+  </div>
+  <div style="display: table-cell; vertical-align: top;">
+  </div>
+  <div style="display: table-cell; vertical-align: top;">
+```{r init_cp_plot, echo = FALSE, fig.width = 3, fig.height = 3}
+plot(init_cp4)
+```
+  </div>
+  </div>
+</div>
+
+* *We will explore how the `method` argument works in more detail.*
+
+
+## Run CPR
+```{r cpr_run4}
+cpr_run4 <- cpr(init_cp4)
+```
+
+* *We will explore how the `cpr` is able to fit all the models via updating the
+  `formula` element of `init_cp4` object.*
+
+## Select a Model
+<div style="width: 100%; display: table;">
+  <div style="display: table-row">
+  <div style="display: table-cell; vertical-align: top;">
+```{r cpr_run4_plot_cps, fig.width = 5, fig.height = 5, fig.show = "hold"}
+plot(cpr_run4, color = TRUE)
+```
+  </div>
+  <div style="display: table-cell; vertical-align: top;">
+  <img width=50px height=200px src="figure/white-square.png">
+  </div>
+  <div style="display: table-cell; vertical-align: top;">
+```{r cpr_run4_plot_rmse, fig.width = 4.5, fig.height = 2.6}
+plot(cpr_run4, type = "rmse", to = 12)
+```
+```{r cpr_run4_selected}
+cpr_run4
+selected_cp4 <- cpr_run4[[4]]
+```
+  </div>
+  </div>
+</div>
+
+
+## Selected CP
+```{r cpr_run4_selected_str}
+str(selected_cp4)
+```
+
+## Methods for `cpr_cp` Objects
+```{r cpr_cp_methods}
+methods(class = "cpr_cp")
+```
+
+## Other Orders
+CPR is fast, consider other polynomial orders to help find parsimonious models.
+```{r cpr_other_orders}
+init_cp3 <- update_bsplines(init_cp4, df = 53, order = 3)
+init_cp2 <- update_bsplines(init_cp4, df = 52, order = 2)
+cpr_run3 <- cpr(init_cp3)
+cpr_run2 <- cpr(init_cp2)
+```
+
+```{r cpr_other_order_results_no_eval, ref.label = "cpr_other_order_results", echo = TRUE, eval = FALSE}
+```
+
+## Summaries
+```{r cpr_other_order_results, echo = FALSE}
+list(cpr_run4, cpr_run3, cpr_run2) %>%
+lapply(summary) %>%
+bind_rows(.id = "order") %>%
+mutate(order = factor(order, 1:3, c("4th", "3rd", "2nd"))) %>%
+filter(index < 13) %>%
+
+ggplot() +
+aes(x = dfs, y = rmse, color = order, linetype = order) +
+geom_path() +
+geom_point()   # Graphic on the next slide
+```
+
+```{r, eval = FALSE}
+# Preferable Model  (index and dfs are not the same thing)
+cpr_run3[[3]]
+```
+## Control Net Reduction
+
+* Control Net Reduction (CNR) is the natural extension of CPR from uni-variable
+  B-splines to multi-variable B-splines.
+
+```{r cnr-overview, eval = FALSE}
+# Pseudo-code example of CNR
+init_cn <- cn(y ~ btensor(list(x1, x2, x3)))   # Initial control net
+cnr_run <- cnr(init_cn)                        # run CNR
+plot(cnr_run)                                  # diagnostic plots
+selected_cn <- cnr_run[[3]]                    # select preferable model
+```
+
+## Some Results from My Dissertation
+<iframe src="swan_rgl.html"></iframe>
+
+## Some Results from My Dissertation
+<iframe src="swan_animation_age_ttm.html"></iframe>
+
+## Download cpr
+
+- `cpr`: Control Polygon Reduction <img width=259 height=300 src="figure/cpr-hex.png" align = "right"/>
+    - https://cran.r-project.org/package=cpr
+    - https://github.com/dewittpe/cpr
+
+- Detailed examples are in vignette and standard documentation files.
+
+- Please test the package.  File bug reports at
+  https://github.com/dewittpe/cpr/issues
+
+- These slides and the following examples are available at
+  https://github.com/dewittpe/cpr-DRUG-june-2017
