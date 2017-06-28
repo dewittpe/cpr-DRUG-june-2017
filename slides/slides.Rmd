@@ -26,6 +26,7 @@ output:
     * R Programming Examples:
 
         * `match.fun`
+        * `match.call`
         * `update`
         * formulae and environments
 

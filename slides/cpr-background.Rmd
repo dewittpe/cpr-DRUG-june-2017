@@ -84,6 +84,10 @@ grid.arrange(plot(eg_cp, show_spline = TRUE, show_cp = FALSE),
 - More details in vignette and arxiv paper:
   https://arxiv.org/abs/1705.04756
 
+
+```{r child="influence.Rmd"}
+```
+
 ## Idealized CPR Example
 
 <iframe src="fdat_cpr_run.html"></iframe>

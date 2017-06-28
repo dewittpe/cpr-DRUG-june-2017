@@ -115,6 +115,7 @@
 
 <ul>
 <li><code>match.fun</code></li>
+<li><code>match.call</code></li>
 <li><code>update</code></li>
 <li>formulae and environments</li>
 </ul></li>
@@ -221,6 +222,176 @@ eg_cp &lt;- cp(bmat, theta)</pre>
 <li>Sum of the squared distance between control vertex ordinates.</li>
 <li>More details in vignette and arxiv paper: <a href='https://arxiv.org/abs/1705.04756' title=''>https://arxiv.org/abs/1705.04756</a></li>
 </ul>
+
+</article></slide><slide class=''><hgroup><h2>Assessing the Influence of a Knot</h2></hgroup><article  id="assessing-the-influence-of-a-knot">
+
+<div style="width: 100%; display: table;">
+<div style="display: table-row">
+<div style="width: 600px; display: table-cell; vertical-align: top;">
+<ul>
+<li><p>Add elements to the knot sequence without affecting the spline function (Boehm 1980).</p></li>
+<li><p>Specifically, for \(\bs{\xi} \text{ and } \bs{\xi} \cup \xi&#39;,\)</p></li>
+</ul>
+
+<p>\[\bs{B}_{k, \bs{\xi}}\left(x \right) \bs{\theta}_{\bs{\xi}} = \bs{B}_{k, \bs{\xi} \cup \xi&#39;}\left(x \right) \bs{\theta}_{\bs{\xi} \cup \xi&#39;}\]</p>
+
+<ul>
+<li>The relationship between \(\bs{\theta}_{\bs{\xi}\cup\xi&#39;}\) and \(\bs{\theta}_{\bs{\xi}}\) is defined by a lower bi-diagonal matrix \[\bs{\theta}_{\bs{\xi}\cup\xi&#39;} = \bs{W}_{k, \bs{\xi}} \left( \xi&#39; \right) \bs{\theta}_{\bs{\xi}}\]</li>
+</ul></div>
+
+<div style="display: table-cell; vertical-align: top;">
+<img src='slides_files/figure-html/boehm-1.png' title=''/><!-- --></div></div></div>
+
+<pre class = 'prettyprint lang-r'>bmat_boehm  &lt;- update_bsplines(bmat, iknots = sort(c(attr(bmat, &quot;iknots&quot;), 2.0)))
+theta_boehm &lt;- insertion_matrix(2.0, attr(bmat, &quot;xi&quot;)) %*% theta
+plot(cp(bmat, theta), cp(bmat_boehm, theta_boehm), show_spline = TRUE, color = TRUE) +
+  theme(legend.position = &quot;none&quot;)</pre>
+
+</article></slide><slide class=''><hgroup><h2>Influence Weight, \(w_j\), of \(\xi_j \in \bs{\xi}\) on \(\bs{B}_{k, \bs{\xi}}\left(x\right) \bs{\theta}_{\bs{\xi}}\)</h2></hgroup><article  id="influence-weight-w_j-of-xi_j-in-bsxi-on-bsb_k-bsxileftxright-bstheta_bsxi">
+
+<script>
+  function check_value(fieldvalue) {
+    switch (fieldvalue) {
+      case 1:
+        document.getElementById("imagedest").innerHTML = "<img width=480 height=360 src='figure/original_spline.png'>";
+        break;
+      case 2:
+        document.getElementById("imagedest").innerHTML = "<img width=480 height=360 src='figure/eg_spline_and_cp_plot_omit_xi6.png'>";
+        break;
+      case 3:
+        document.getElementById("imagedest").innerHTML = "<img width=480 height=360 src='figure/eg_spline_and_cp_plot_reinsert_xi6.png'>";
+        break;
+      case 4:
+        document.getElementById("imagedest").innerHTML = "<img width=480 height=360 src='figure/eg_spline_and_cp_plot_omit_xi8.png'>";
+        break;
+      case 5:
+        document.getElementById("imagedest").innerHTML = "<img width=480 height=360 src='figure/eg_spline_and_cp_plot_reinsert_xi8.png'>";
+        break;
+      default:
+        document.getElementById("imagedest").innerHTML = "<img width=480 height=360 src='figure/original_spline.png'>";
+    }
+  }
+</script>
+
+<form name="builder">
+
+<table cellpadding="10">
+
+<tr>
+
+<td width="200px">
+
+Original CP    
+
+</td>
+
+<td width="350px">
+
+Influence of \(\xi_6\)
+
+</td>
+
+<td width="350px">
+
+Influence of \(\xi_8\)
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+
+<input type="radio" name="field" value=1 onclick='check_value(1)' checked="checked"/> \(CP_{k, \bs{\xi}, \bs{\theta}_{\bs{\xi}}}\)
+
+</td>
+
+<td>
+
+<input type="radio" name="field" value=2 onclick='check_value(2)' /> \(CP_{k, \bs{\xi}\backslash \xi_6, \bs{\theta}_{\bs{\xi}\backslash \xi_6}}\)
+
+</td>
+
+<td>
+
+<input type="radio" name="field" value=4 onclick='check_value(4)' /> \(CP_{k, \bs{\xi}\backslash \xi_8, \bs{\theta}_{\bs{\xi}\backslash \xi_8}}\)
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+
+</td>
+
+<td>
+
+<input type="radio" name="field" value=3 onclick='check_value(3)' /> \(CP_{k, \left(\bs{\xi}\backslash \xi_6\right) \cup \xi_6, \bs{\theta}_{\left(\bs{\xi}\backslash \xi_6\right) \cup \xi_6}}\)
+
+</td>
+
+<td>
+
+<input type="radio" name="field" value=5 onclick='check_value(5)' /> \(CP_{k, \left(\bs{\xi}\backslash \xi_8\right) \cup \xi_8, \bs{\theta}_{\left(\bs{\xi}\backslash \xi_8\right) \cup \xi_8}}\)
+
+</td>
+
+</tr>
+
+</table>
+
+</form>
+
+<hr>
+
+<div style="width: 100%; display: table;">
+<div style="display: table-row">
+<div id="imagedest" style="width: 600px; display: table-cell; vertical-align: top;">
+<img width=480 height=360 src='figure/original_spline.png'></div>
+
+<div id="influence" style="display: table-cell; vertical-align: top;">
+<p><font size=4></p>
+
+<p>\[
+\begin{split}
+\bs{\theta}_{\bs{\xi}\backslash \xi_j} &amp;= \left( \bs{W}^{T} \bs{W} \right)^{-1} \bs{W}^{T} \bs{\theta}_{\bs{\xi}} \\ \\
+\bs{\theta}_{\left(\bs{\xi}\backslash \xi_j\right) \cup \xi_j} &amp;= \bs{W} \bs{\theta}_{\bs{\xi}\backslash \xi_j} \\
+&amp;= \bs{W} \left( \bs{W}^{T} \bs{W} \right)^{-1} \bs{W}^{T} \bs{\theta}_{\bs{\xi}} \\ \\
+w_{j} &amp;= \left\lVert \bs{\theta}_{\bs{\xi}} - \bs{\theta}_{ \left(\bs{\xi} \backslash \xi_j \right) \cup \xi_j} \right\rVert_2 \\
+      &amp;= \left\lVert \left( \bs{I} - \bs{W} \left( \bs{W}^T \bs{W} \right)^{-1} \bs{W}^T\right) \bs{\theta}_{\bs{\xi}} \right\rVert_2.
+\end{split}
+\]</p>
+
+\(w_{6} = 0.539, \quad w_{8} = 0.278\) </font></div></div></div>
+
+<div style="position: absolute; right: 0px; bottom: 0px;">
+<p><img width=25px height=25px src="figure/thank-you-notes-512.png"></p></div>
+
+<aside class='note'><section><pre class = 'prettyprint lang-r'>influence_of(eg_cp)
+## # A tibble: 5 x 4
+##   index iknots         w  rank
+##   &lt;int&gt;  &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;
+## 1     5    1.0 1.2832037     5
+## 2     6    1.5 0.5391356     2
+## 3     7    2.3 0.5586146     3
+## 4     8    4.0 0.2775425     1
+## 5     9    4.5 0.6479795     4</pre></section></aside>
+
+</article></slide><slide class=''><hgroup><h2>The Control Polygon Reduction Algorithm</h2></hgroup><article  id="the-control-polygon-reduction-algorithm">
+
+<ol>
+<li>Start with a high cardinal knot sequences, say \(L = 50,\) and set \(l = L\) to index models.</li>
+<li>Use an appropriate regression modeling approach to estimate the control polygon ordinates.</li>
+<li>Construct the control polygon for the current \(\bs{\xi}_{l}\) and \(\bs{\theta}_{\bs{\xi}_{l}}\) estimate.</li>
+<li>Use \(CP_{k, \bs{\xi}_{l}, \bs{\theta}_{\bs{\xi}_l}}\) and find the influence weight for all internal knots.</li>
+<li>Coarsen the knot sequence by removing the knot with the smallest influence weight.</li>
+<li>Refit the regression model using the coarsened knot sequence and index \(l = l - 1.\)</li>
+<li>Repeat steps 3 through 6 until all internal knots have been removed, <em>i.e.</em>, if \(l \geq 0\) go to 3, else go to 8.</li>
+<li>Select the preferable model by visual inspection of diagnostic graphics.</li>
+</ol>
 
 </article></slide><slide class=''><hgroup><h2>Idealized CPR Example</h2></hgroup><article  id="idealized-cpr-example">
 
@@ -508,7 +679,8 @@ library(lme4)
 
 # initial control polygon, 4th order B-splines
 init_cp4 &lt;- cp(log10(pdg) ~ bsplines(day, df = 54) + (1 | id),
-               data = spdg, method = lmer)
+               data = spdg,
+               method = lmer)
 plot(init_cp4)</pre></div>
 
 <div style="display: table-cell; vertical-align: top;">
@@ -642,8 +814,9 @@ selected_cn &lt;- cnr_run[[3]]                    # select preferable model</pre
 <li><a href='https://github.com/dewittpe/cpr' title=''>https://github.com/dewittpe/cpr</a></li>
 </ul></li>
 <li><p>Detailed examples are in vignette and standard documentation files.</p></li>
+<li><p>Or the paper on arXiv: <a href='https://arxiv.org/abs/1705.04756' title=''>https://arxiv.org/abs/1705.04756</a></p></li>
 <li><p>Please test the package. File bug reports at <a href='https://github.com/dewittpe/cpr/issues' title=''>https://github.com/dewittpe/cpr/issues</a></p></li>
-<li><p>These slides are available at <a href='https://github.com/dewittpe/cpr-cowy-asa-april-2017' title=''>https://github.com/dewittpe/cpr-cowy-asa-april-2017</a></p></li>
+<li><p>These slides and the following examples are available at <a href='https://github.com/dewittpe/cpr-DRUG-june-2017' title=''>https://github.com/dewittpe/cpr-DRUG-june-2017</a></p></li>
 </ul></article></slide>
 
 

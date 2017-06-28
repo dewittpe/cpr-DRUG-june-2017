@@ -53,7 +53,8 @@ library(lme4)
 
 # initial control polygon, 4th order B-splines
 init_cp4 <- cp(log10(pdg) ~ bsplines(day, df = 54) + (1 | id),
-               data = spdg, method = lmer)
+               data = spdg,
+               method = lmer)
 plot(init_cp4)
 ```
   </div>
@@ -168,6 +169,8 @@ selected_cn <- cnr_run[[3]]                    # select preferable model
     - https://github.com/dewittpe/cpr
 
 - Detailed examples are in vignette and standard documentation files.
+
+- Or the paper on arXiv: https://arxiv.org/abs/1705.04756
 
 - Please test the package.  File bug reports at
   https://github.com/dewittpe/cpr/issues

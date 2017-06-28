@@ -39,6 +39,7 @@ summary(cp_lmer$fit)
 is.function(lm)
 lm <- sqrt(3)   # DON'T DO THIS, FOR ILLUSTRATIVE PURPOSES ONLY
 lm
+lm(mpg ~ wt, data = mtcars) # R is smart, but still, don't assign a value to lm
 
 mylm <- match.fun(lm)
 is.function(lm)
@@ -147,6 +148,7 @@ update(fit, formula = . ~ . + hp)
 
 init_cp <- cp(log10(pdg) ~ bsplines(day, df = 14) + (1 | id),
               data = spdg)
+
 summary(init_cp$fit)
 
 # Forgot to specify the correct method
@@ -162,18 +164,19 @@ init_cp$call
 # Now, let's try to change the arguments passed to the bsplines call.   Let's
 # use order = 3 instead of the default order = 4
 
-# this gives the wrong df and we've lost age
+# this gives the wrong df, as in that df != 14,  and we've lost age on the rhs
 new_cp <- update(init_cp, formula = . ~ bsplines(day, order = 3))
 new_cp$call
 
 # This will error because there would be two bsplines() calls
 new_cp <- update(init_cp, formula = . ~ . + bsplines(day, order = 3))
 
-# Need to remove the old bsplines call.  It must be written exactly as it was in
+# Need to remove the old bsplines call.  It must be written **exactly** as it was in
 # in the init_cp call.
 
-# This errors
-new_cp <- update(init_cp, formula = . ~ . - bsplines(df = 14, day) + bsplines(day, order = 3))
+# This errors...
+new_cp <-
+  update(init_cp, formula = . ~ . - bsplines(df = 14, day) + bsplines(day, df = 14, order = 3))
 
 
 # this works:
@@ -200,28 +203,47 @@ f
 is.list(f)
 as.list(f)
 is.recursive(f)
+is.recursive(as.list(f))
 
 f %>% as.list %>% lapply(as.list)
 
 # So, formula are recursive lists. We can use that.  Let's build a generic
 # function update_func_args to update arguments (...) of function fun within the
 # formula f.
-update_func_args <- function(f, fun, ...) {
 
-  find_func <- function(x, fun = fun, dots = dots) {
-
-    if (is.call(x) && grepl(fun, deparse(x[[1]]))) {
-      for (d in names(dots)) {
-        x[[d]] <- dots[[d]]
-      }
-      x
-    } else if (is.recursive(x)) {
-      as.call(lapply(as.list(x), find_func, fun, dots))
-    } else {
-      x
+# First, we'll define a function that will update arguments of functions within
+# a formula
+find_func <- function(x, fun = fun, dots = dots) {
+  if (is.call(x) && grepl(fun, deparse(x[[1]]))) {
+    for (d in names(dots)) {
+      x[[d]] <- dots[[d]]
     }
+    x
+  } else if (is.recursive(x)) {
+    as.call(lapply(as.list(x), find_func, fun, dots))
+  } else {
+    x
   }
+}
 
+# example
+f
+f2 <- find_func(f, "bsplines", dots = list(iknots = c(0.1, 0.2)))
+f3 <- find_func(f, "bsplines", dots = list(df = 10, bknots = c(-1, 2)))
+f2
+f3
+
+class(f)
+class(f2)
+class(f3)
+
+environment(f)
+environment(f2)
+environment(f3)
+
+# The function update_func_args will return a formula with the correct
+# environment
+update_func_args <- function(f, fun, ...) {
   dots <- as.list(match.call(expand.dots = FALSE))$...
   out  <- lapply(as.list(f), find_func, fun, dots)
   out  <- eval(as.call(out))
@@ -229,9 +251,17 @@ update_func_args <- function(f, fun, ...) {
   out
 }
 
-update_func_args(f, "bsplines", df = 16, iknots = c(0.2, 0.8))
+f2 <- update_func_args(f, "bsplines", df = 16, iknots = c(0.2, 0.8))
+f3 <- update_func_args(f, "bsplines", df = NULL, iknots = c(0.2, 0.8))
 
-update_func_args(f, "bsplines", df = NULL, iknots = c(0.2, 0.8))
+class(f)
+class(f2)
+class(f3)
+
+environment(f)
+environment(f2)
+environment(f3)
+
 
 # To use with init_cp
 init_cp <- cp(log10(pdg) ~ bsplines(day, iknots = c(0.12, 0.15)), data = spdg)
@@ -265,9 +295,18 @@ summary(updated_fit)
 # The function update_bsplines in the cpr package is provided so that the end
 # user need not write out all of the above.  Also, it will ignore silly
 # arguments, or rather, arguments that mean nothing to bsplines()
+update_bsplines
+methods(update_bsplines)
+cpr:::update_bsplines.cpr_cp
+cpr:::update_bsplines.formula
+cpr:::find_update_b_
+
 init_cp$call
 new_cp <- update_bsplines(init_cp, df = 10, order = 3, iknots = NULL, silly = "yep")
 new_cp$call
 plot(init_cp, new_cp, color = TRUE, show_spline = TRUE)
+
+# Look at the code for cpr -----------------------------------------------------
+cpr:::cpr.cpr_cp
 
 # end of file ------------------------------------------------------------------
